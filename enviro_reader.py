@@ -112,7 +112,7 @@ def take_reading(bme280, pms5003):
         try:
             pm = pms5003.read()
             pm_ok = True
-        except pms5003.ChecksumMismatchError:
+        except:
             pm_tries += 1
 
     if not pm_ok:
