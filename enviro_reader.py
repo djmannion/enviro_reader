@@ -8,10 +8,13 @@ import datetime
 # weather
 import smbus2
 import bme280
+
 # light
 import ltr559
+
 # gas
 import enviroplus.gas
+
 # PM
 import pms5003
 
@@ -35,7 +38,7 @@ READING = collections.namedtuple(
         "PM1_0",
         "PM2_5",
         "PM10_0",
-    )
+    ),
 )
 
 # time between measurements
