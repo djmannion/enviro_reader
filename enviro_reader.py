@@ -4,7 +4,6 @@ import pathlib
 import time
 import collections
 import datetime
-import time
 
 # weather
 import smbus2
@@ -42,8 +41,6 @@ READING = collections.namedtuple(
 # time between measurements
 DELTA_S = 30.0
 
-READING_NUMBER = 0
-
 BUS = smbus2.SMBus(1)
 BME280 = bme280.BME280(i2c_dev=BUS)
 PMS5003 = pms5003.PMS5003()
@@ -51,8 +48,12 @@ PMS5003 = pms5003.PMS5003()
 
 def take_readings():
 
+    reading_number = 0
+
     # first reading is always junk
-    reading = take_reading()
+    reading = take_reading(reading_number=reading_number)
+
+    reading_number += 1
 
     curr_date = reading.date
 
@@ -79,7 +80,9 @@ def take_readings():
 
             while not day_finished:
 
-                reading = take_reading()
+                reading = take_reading(reading_number=reading_number)
+
+                reading_number += 1
 
                 print(reading)
 
@@ -98,9 +101,7 @@ def take_readings():
         curr_date = reading.date
 
 
-def take_reading():
-
-    global READING_NUMBER
+def take_reading(reading_number):
 
     BME280.update_sensor()
     gas = enviroplus.gas.read_all()
@@ -122,7 +123,7 @@ def take_reading():
 
     reading = READING(
         date=datetime.datetime.now(),
-        reading_number=READING_NUMBER,
+        reading_number=reading_number,
         temperature=BME280.temperature,
         humidity=BME280.humidity,
         pressure=BME280.pressure,
@@ -135,8 +136,6 @@ def take_reading():
         PM2_5=pm2_5,
         PM10_0=pm10_0,
     )
-
-    READING_NUMBER += 1
 
     return reading
 
