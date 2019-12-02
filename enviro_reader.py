@@ -44,15 +44,15 @@ DELTA_S = 30.0
 
 READING_NUMBER = 0
 
+BUS = smbus2.SMBus(1)
+BME280 = bme280.BME280(i2c_dev=BUS)
+PMS5003 = pms5003.PMS5003()
+
 
 def take_readings():
 
-    bus = smbus2.SMBus(1)
-    curr_bme280 = bme280.BME280(i2c_dev=bus)
-    curr_pms5003 = pms5003.PMS5003()
-
     # first reading is always junk
-    reading = take_reading(bme280=curr_bme280, pms5003=curr_pms5003)
+    reading = take_reading()
 
     curr_date = reading.date
 
@@ -79,7 +79,7 @@ def take_readings():
 
             while not day_finished:
 
-                reading = take_reading(bme280=curr_bme280, pms5003=curr_pms5003)
+                reading = take_reading()
 
                 print(reading)
 
@@ -98,11 +98,11 @@ def take_readings():
         curr_date = reading.date
 
 
-def take_reading(bme280, pms5003):
+def take_reading():
 
     global READING_NUMBER
 
-    bme280.update_sensor()
+    BME280.update_sensor()
     gas = enviroplus.gas.read_all()
 
     pm_ok = False
@@ -110,7 +110,7 @@ def take_reading(bme280, pms5003):
 
     while not pm_ok and pm_tries < 10:
         try:
-            pm = pms5003.read()
+            pm = PMS5003.read()
             pm_ok = True
         except:
             pm_tries += 1
@@ -123,9 +123,9 @@ def take_reading(bme280, pms5003):
     reading = READING(
         date=datetime.datetime.now(),
         reading_number=READING_NUMBER,
-        temperature=bme280.temperature,
-        humidity=bme280.humidity,
-        pressure=bme280.pressure,
+        temperature=BME280.temperature,
+        humidity=BME280.humidity,
+        pressure=BME280.pressure,
         light=ltr559.get_lux(),
         proximity=ltr559.get_proximity(),
         gas_reducing=gas.reducing,
