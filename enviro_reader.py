@@ -4,6 +4,8 @@ import pathlib
 import time
 import collections
 import datetime
+import contextlib
+import sqlite3
 
 # weather
 import smbus2
@@ -19,13 +21,15 @@ import enviroplus.gas
 import pms5003
 
 
-BASE_PATH = pathlib.Path(__file__).absolute().parent.parent.parent
-READINGS_PATH = BASE_PATH / "readings"
+READINGS_PATH = pathlib.Path("~/readings").expanduser()
+DB_PATH = READINGS_PATH / "djm_enviro_readings.db"
+
+assert DB_PATH.exists()
 
 READING = collections.namedtuple(
     "reading",
     (
-        "date",
+        "timestamp",
         "reading_number",
         "temperature",
         "humidity",
@@ -58,50 +62,31 @@ def take_readings():
 
     reading_number += 1
 
-    curr_date = reading.date
+    insert_str = (
+        "INSERT INTO readings VALUES ("
+        + ",".join(["?"] * len(reading))
+        + ")"
+    )
 
-    keep_going = True
+    with contextlib.closing(sqlite3.connect(database=DB_PATH)) as db:
 
-    while keep_going:
+        cursor = db.cursor()
 
-        day_finished = False
+        keep_going = True
 
-        filename = (
-            "djm_enviro_"
-            + f"{curr_date.year:d}_{curr_date.month:02d}_{curr_date.day:02d}"
-            + ".tsv"
-        )
+        while keep_going:
 
-        path = READINGS_PATH / filename
+            reading = take_reading(reading_number=reading_number)
 
-        write_header = not path.exists()
+            with db:
+                cursor.execute(insert_str, reading)
 
-        with open(path, "a") as readings_file:
+            reading_number += 1
 
-            if write_header:
-                readings_file.write("\t".join(READING._fields) + "\n")
+            print(reading)
 
-            while not day_finished:
+            time.sleep(DELTA_S)
 
-                reading = take_reading(reading_number=reading_number)
-
-                reading_number += 1
-
-                print(reading)
-
-                # it is finished if the day has changed
-                day_finished = reading.date.day != curr_date.day
-
-                line = reading_to_str(reading=reading)
-
-                readings_file.write(line + "\n")
-
-                readings_file.flush()
-
-                time.sleep(DELTA_S)
-
-        # update the current date
-        curr_date = reading.date
 
 
 def take_reading(reading_number):
@@ -125,7 +110,7 @@ def take_reading(reading_number):
         (pm1_0, pm2_5, pm10_0) = [pm.pm_ug_per_m3(n) for n in [1.0, 2.5, 10.0]]
 
     reading = READING(
-        date=datetime.datetime.now(),
+        date=datetime.datetime.now().isoformat(),
         reading_number=reading_number,
         temperature=BME280.temperature,
         humidity=BME280.humidity,
@@ -141,13 +126,6 @@ def take_reading(reading_number):
     )
 
     return reading
-
-
-def reading_to_str(reading):
-
-    line = "\t".join([str(getattr(reading, field)) for field in reading._fields])
-
-    return line
 
 
 if __name__ == "__main__":
