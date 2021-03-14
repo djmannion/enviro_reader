@@ -5,7 +5,8 @@ import time
 import collections
 import datetime
 import contextlib
-import sqlite3
+
+import mariadb
 
 # weather
 import smbus2
@@ -21,10 +22,16 @@ import enviroplus.gas
 import pms5003
 
 
-READINGS_PATH = pathlib.Path("~/readings").expanduser()
-DB_PATH = READINGS_PATH / "djm_enviro_readings.db"
+# local settings (host, username, password)
+# this file looks like:
+# [client]
+# user = ""
+# password = ""
+# host = ""
+# database = "readings"
+SETTINGS_PATH = pathlib.Path("~/.readings_server.cnf").expanduser()
 
-#assert DB_PATH.exists()
+assert SETTINGS_PATH.exists()
 
 READING = collections.namedtuple(
     "reading",
@@ -62,13 +69,7 @@ def take_readings():
 
     reading_number += 1
 
-    insert_str = (
-        "INSERT INTO readings VALUES ("
-        + ",".join(["?"] * len(reading))
-        + ")"
-    )
-
-    with contextlib.closing(sqlite3.connect(database=DB_PATH)) as db:
+    with contextlib.closing(mariadb.connect(default_file=SETTINGS_PATH)) as db:
 
         cursor = db.cursor()
 
@@ -78,8 +79,9 @@ def take_readings():
 
             reading = take_reading(reading_number=reading_number)
 
-            with db:
-                cursor.execute(insert_str, reading)
+            store_reading(reading=reading, cursor=cursor)
+
+            db.commit()
 
             reading_number += 1
 
@@ -87,6 +89,16 @@ def take_readings():
 
             time.sleep(DELTA_S)
 
+
+def store_reading(reading, cursor):
+
+    insert_str = (
+        "INSERT INTO readings VALUES ("
+        + ",".join(["?"] * len(reading))
+        + ")"
+    )
+
+    cursor.execute(insert_str, reading)
 
 
 def take_reading(reading_number):
