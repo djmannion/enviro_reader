@@ -69,7 +69,7 @@ def take_readings():
 
     reading_number += 1
 
-    with contextlib.closing(mariadb.connect(default_file=SETTINGS_PATH)) as db:
+    with contextlib.closing(mariadb.connect(default_file=str(SETTINGS_PATH))) as db:
 
         cursor = db.cursor()
 
