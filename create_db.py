@@ -4,6 +4,8 @@ import datetime
 
 import mariadb
 
+import enviro_reader
+
 
 def run():
 
@@ -16,11 +18,22 @@ def run():
 
     mariadb_settings_path = pathlib.Path("~/.readings_server.cnf").expanduser()
 
-    mariadb_db = mariadb.connect(default_file=SETTINGS_PATH)
+    mariadb_db = mariadb.connect(default_file=str(mariadb_settings_path))
     mariadb_cursor = mariadb_db.cursor()
 
+    old = sqlite_cursor.execute("SELECT * FROM readings")
 
+    for old_reading in old:
 
+        reading = enviro_reader.READING(*old_reading)
+
+        enviro_reader.store_reading(
+            reading=reading, cursor=mariadb_cursor, mode="REPLACE"
+        )
+
+        mariadb_db.commit()
+
+    mariadb_db.close()
     db.close()
 
 

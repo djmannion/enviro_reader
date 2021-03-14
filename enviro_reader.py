@@ -8,18 +8,23 @@ import contextlib
 
 import mariadb
 
-# weather
-import smbus2
-import bme280
+try:
+    # weather
+    import smbus2
+    import bme280
 
-# light
-import ltr559
+    # light
+    import ltr559
 
-# gas
-import enviroplus.gas
+    # gas
+    import enviroplus.gas
 
-# PM
-import pms5003
+    # PM
+    import pms5003
+except ImportError:
+    can_take_readings = False
+else:
+    can_take_readings = True
 
 
 # local settings (host, username, password)
@@ -55,9 +60,10 @@ READING = collections.namedtuple(
 # time between measurements
 DELTA_S = 30.0
 
-BUS = smbus2.SMBus(1)
-BME280 = bme280.BME280(i2c_dev=BUS)
-PMS5003 = pms5003.PMS5003()
+if can_take_readings:
+    BUS = smbus2.SMBus(1)
+    BME280 = bme280.BME280(i2c_dev=BUS)
+    PMS5003 = pms5003.PMS5003()
 
 
 def take_readings():
@@ -90,15 +96,15 @@ def take_readings():
             time.sleep(DELTA_S)
 
 
-def store_reading(reading, cursor):
+def store_reading(reading, cursor, mode="insert"):
 
-    insert_str = (
-        "INSERT INTO readings VALUES ("
+    command_str = (
+        mode.upper() + " INTO readings VALUES ("
         + ",".join(["?"] * len(reading))
         + ")"
     )
 
-    cursor.execute(insert_str, reading)
+    cursor.execute(command_str, reading)
 
 
 def take_reading(reading_number):
