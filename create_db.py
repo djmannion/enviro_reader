@@ -34,7 +34,7 @@ def run():
         mariadb_db.commit()
 
     mariadb_db.close()
-    db.close()
+    sqlite_db.close()
 
 
 if __name__ == "__main__":
