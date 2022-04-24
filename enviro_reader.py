@@ -123,7 +123,7 @@ def take_reading(reading_number):
             pm_tries += 1
 
     if not pm_ok:
-        pm1_0 = pm2_5 = pm10_0 = "NULL"
+        pm1_0 = pm2_5 = pm10_0 = None
     else:
         (pm1_0, pm2_5, pm10_0) = [pm.pm_ug_per_m3(n) for n in [1.0, 2.5, 10.0]]
 
