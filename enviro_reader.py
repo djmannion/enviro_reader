@@ -58,7 +58,7 @@ READING = collections.namedtuple(
 )
 
 # time between measurements
-DELTA_S = 30.0
+DELTA_S = 5 * 60.0
 
 if can_take_readings:
     BUS = smbus2.SMBus(1)
