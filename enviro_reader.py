@@ -64,6 +64,7 @@ if can_take_readings:
     BUS = smbus2.SMBus(1)
     BME280 = bme280.BME280(i2c_dev=BUS)
     PMS5003 = pms5003.PMS5003()
+    PMS5003.setup()
 
 
 def take_readings():
